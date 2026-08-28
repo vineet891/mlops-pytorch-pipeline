@@ -1,0 +1,55 @@
+# GPU bonus job. Same as training-job.yaml plus a GPU request.
+# Do not apply this on a laptop cluster; it will stay Pending
+# without a GPU node. nodeSelector is accelerator=nvidia-gpu.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pytorch-training-gpu
+  namespace: ml-training
+  labels:
+    project: mlops-pytorch-pipeline
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: pytorch-training-gpu
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        accelerator: nvidia-gpu
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: trainer
+          image: mlops-train:v1
+          imagePullPolicy: Never
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+              nvidia.com/gpu: 1
+            limits:
+              cpu: "2"
+              memory: 4Gi
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: config
+              mountPath: /app/configs
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: checkpoints
+              mountPath: /app/checkpoints
+      volumes:
+        - name: config
+          configMap:
+            name: training-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: training-data-pvc
+        - name: checkpoints
+          persistentVolumeClaim:
+            claimName: model-checkpoints-pvc
