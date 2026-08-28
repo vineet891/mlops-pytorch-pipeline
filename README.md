@@ -130,6 +130,65 @@ curl -X POST http://localhost:8080/predict \
 docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
 
+## Kubernetes
+
+Tested on Rancher Desktop k3s. Give the VM at least 4 CPUs and 8 GB
+of memory so the training job (2 CPU / 4 Gi) can schedule.
+`imagePullPolicy: Never` means the images must already exist locally.
+Do not apply `training-job-gpu.yaml` on a laptop; it needs a GPU node.
+HPA is omitted (course staff said it is not required).
+
+```bash
+kubectl config use-context rancher-desktop
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/pvc.yaml
+kubectl get pvc -n ml-training
+```
+
+CIFAR-10 cannot be downloaded inside the cluster (TLS to Toronto
+fails on this network). Copy the files you already have into the PVC:
+
+```bash
+kubectl apply -f k8s/data-loader.yaml
+kubectl wait --for=condition=Ready pod/data-loader \
+  -n ml-training --timeout=60s
+kubectl cp data/cifar-10-batches-py \
+  ml-training/data-loader:/data/cifar-10-batches-py
+kubectl delete pod data-loader -n ml-training
+```
+
+Train, then serve:
+
+```bash
+kubectl apply -f k8s/training-job.yaml
+kubectl get pods -n ml-training
+kubectl logs -f job/pytorch-training -n ml-training
+kubectl wait --for=condition=complete job/pytorch-training \
+  -n ml-training --timeout=45m
+
+kubectl apply -f k8s/serving-deployment.yaml
+kubectl apply -f k8s/serving-service.yaml
+kubectl get pods -n ml-training
+kubectl describe deployment model-serving -n ml-training
+```
+
+Predict through the service:
+
+```bash
+kubectl port-forward svc/model-serving 8080:80 -n ml-training
+```
+
+In another terminal:
+
+```bash
+curl http://localhost:8080/health
+curl -X POST http://localhost:8080/predict \
+  -F "image=@test_image.png"
+```
+
+Tear down with `kubectl delete namespace ml-training`.
+
 ## Git workflow
 
 Work happens on feature branches off `develop`. Each part of the
