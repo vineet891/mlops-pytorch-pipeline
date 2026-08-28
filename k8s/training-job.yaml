@@ -1,0 +1,52 @@
+# One-shot CPU training job. Images are local, so Never pull.
+# TRAIN_EPOCHS and TRAIN_SUBSET_FRACTION shorten the run on a
+# laptop; the ConfigMap still holds the assignment defaults.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pytorch-training
+  namespace: ml-training
+  labels:
+    project: mlops-pytorch-pipeline
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: pytorch-training
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: trainer
+          image: mlops-train:v1
+          imagePullPolicy: Never
+          env:
+            - name: TRAIN_EPOCHS
+              value: "2"
+            - name: TRAIN_SUBSET_FRACTION
+              value: "0.05"
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: config
+              mountPath: /app/configs
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: checkpoints
+              mountPath: /app/checkpoints
+      volumes:
+        - name: config
+          configMap:
+            name: training-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: training-data-pvc
+        - name: checkpoints
+          persistentVolumeClaim:
+            claimName: model-checkpoints-pvc

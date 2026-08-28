@@ -1,0 +1,7 @@
+# Pinned training dependencies. Versions must stay compatible with
+# python:3.11-slim, which is the image used in docker/Dockerfile.train.
+# torch 2.2.2 does not support NumPy 2.x (_ARRAY_API).
+numpy==1.26.4
+torch==2.2.2
+torchvision==0.17.2
+PyYAML==6.0.2
