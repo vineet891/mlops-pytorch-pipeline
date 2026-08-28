@@ -58,13 +58,32 @@ tests/                         unit tests
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements/train.txt -r requirements/serve.txt
-pip install pytest ruff PyYAML
+pip install pytest ruff httpx
 ruff check src tests
 pytest
 ```
 
-Training, Docker, and Kubernetes steps are added as those parts land
-on `develop` through pull requests.
+A short training run (downloads CIFAR-10 into `data/`):
+
+```bash
+TRAIN_EPOCHS=1 TRAIN_SUBSET_FRACTION=0.05 python src/train.py
+```
+
+Metrics are one JSON object per line on stdout. The checkpoint is
+written to `checkpoints/classifier_v1.pt`. Serve it with:
+
+```bash
+python src/serve.py
+```
+
+In another terminal:
+
+```bash
+curl http://localhost:8080/health
+```
+
+`POST /predict` needs an image file. Docker and Kubernetes steps land
+in later pull requests.
 
 ## Git workflow
 

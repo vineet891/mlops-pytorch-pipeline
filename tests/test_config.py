@@ -9,6 +9,8 @@ from pathlib import Path
 
 import yaml
 
+from config import get_config
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPO_ROOT / "configs" / "training_config.yaml"
 
@@ -69,3 +71,17 @@ def test_config_numeric_fields_are_positive():
   assert config["training"]["batch_size"] > 0
   assert config["training"]["learning_rate"] > 0
   assert config["training"]["early_stopping_patience"] > 0
+
+
+def test_get_config_loads_repo_file():
+  """The loader accepts the checked-in YAML file."""
+  config = get_config(str(CONFIG_PATH))
+  assert config["model"]["architecture"] == "resnet18"
+  assert config["data"]["dataset"] == "cifar10"
+
+
+def test_env_override_epochs(monkeypatch):
+  """TRAIN_EPOCHS replaces the YAML value without editing the file."""
+  monkeypatch.setenv("TRAIN_EPOCHS", "2")
+  config = get_config(str(CONFIG_PATH))
+  assert config["training"]["epochs"] == 2
