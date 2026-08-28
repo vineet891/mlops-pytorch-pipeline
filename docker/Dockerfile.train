@@ -1,0 +1,37 @@
+# Multi-stage training image. The first stage installs pinned
+# dependencies from requirements/train.txt; the second copies only
+# the code and config. PyPI is used (not download.pytorch.org)
+# because this Mac builds linux/arm64 CPU wheels, and the company
+# proxy fails TLS against the PyTorch wheel index.
+FROM python:3.11-slim AS base
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# libgomp is required by the CPU PyTorch wheel.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libgomp1 \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY requirements/train.txt /tmp/train.txt
+
+# trusted-host is required when a TLS-inspecting proxy sits in front
+# of PyPI. Versions stay pinned in train.txt.
+RUN pip install --no-cache-dir \
+  --trusted-host pypi.org \
+  --trusted-host files.pythonhosted.org \
+  -r /tmp/train.txt
+
+FROM base AS training
+
+COPY src/ /app/src/
+COPY configs/ /app/configs/
+
+# Config defaults to /app/configs/training_config.yaml. Override with
+# CONFIG_PATH or by mounting a volume on /app/configs.
+ENTRYPOINT ["python", "src/train.py"]

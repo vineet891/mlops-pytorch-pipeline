@@ -1,0 +1,23 @@
+# Keep build context small. The training and serving images only need
+# requirements, source, configs and the healthcheck script.
+.git
+.github
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.ruff.toml
+pytest.ini
+data
+checkpoints
+runs
+tests
+docs
+*.md
+*.pt
+*.pth
+assignment.pdf
+.DS_Store
+test_image.png
