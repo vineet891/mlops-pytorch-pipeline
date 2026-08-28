@@ -24,6 +24,9 @@ kubeconfig*
 # Course brief stays local; it is not part of the public repo.
 assignment.pdf
 
+# Generated probe image for POST /predict.
+test_image.png
+
 # Editor and OS noise
 .DS_Store
 .idea/

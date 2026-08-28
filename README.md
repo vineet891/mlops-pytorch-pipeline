@@ -27,7 +27,6 @@ flowchart LR
     pvc[("PVC checkpoints")]
     deploy["Deployment model-serving x2"]
     svc["Service :80 to :8080"]
-    hpa["HPA"]
   end
 
   trainImg --> job
@@ -36,7 +35,6 @@ flowchart LR
   job --> pvc
   pvc --> deploy
   deploy --> svc
-  hpa --> deploy
 ```
 
 ## Repository layout
@@ -44,7 +42,7 @@ flowchart LR
 ```
 configs/training_config.yaml   hyperparameters
 docker/                        training and serving Dockerfiles
-k8s/                           Job, Deployment, Service, HPA
+k8s/                           Job, Deployment, Service, PVC
 requirements/train.txt         pinned training dependencies
 requirements/serve.txt         pinned inference dependencies
 src/                           model, dataset, train, serve
@@ -82,8 +80,55 @@ In another terminal:
 curl http://localhost:8080/health
 ```
 
-`POST /predict` needs an image file. Docker and Kubernetes steps land
-in later pull requests.
+`POST /predict` needs an image file:
+
+```bash
+python scripts/make_test_image.py
+curl -X POST http://localhost:8080/predict \
+  -F "image=@test_image.png"
+```
+
+## Docker
+
+Images are CPU-only so they build on a laptop. Start Rancher Desktop
+or Docker Desktop first.
+
+```bash
+docker build -f docker/Dockerfile.train -t mlops-train:v1 .
+docker build -f docker/Dockerfile.serve -t mlops-serve:v1 .
+```
+
+A short training run inside the container. Data and checkpoints live
+on the host via mounts. `TRAIN_EPOCHS` and `TRAIN_SUBSET_FRACTION`
+override the YAML without a rebuild:
+
+```bash
+mkdir -p data checkpoints
+docker run --rm \
+  -e TRAIN_EPOCHS=1 \
+  -e TRAIN_SUBSET_FRACTION=0.05 \
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/checkpoints:/app/checkpoints" \
+  mlops-train:v1
+```
+
+Serve the checkpoint (wait until HEALTHCHECK reports healthy):
+
+```bash
+python scripts/make_test_image.py
+docker run --rm -p 8080:8080 \
+  -v "$(pwd)/checkpoints:/app/checkpoints" \
+  mlops-serve:v1
+```
+
+In another terminal:
+
+```bash
+curl http://localhost:8080/health
+curl -X POST http://localhost:8080/predict \
+  -F "image=@test_image.png"
+docker ps --format "table {{.Names}}\t{{.Status}}"
+```
 
 ## Git workflow
 
