@@ -1,0 +1,36 @@
+# Lint and unit tests on every push and pull request.
+# Image builds are added later once the Dockerfiles exist.
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML==6.0.2 pytest ruff
+
+      - name: Lint
+        run: ruff check src tests
+
+      - name: Unit tests
+        run: pytest

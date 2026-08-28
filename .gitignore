@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Data and model artefacts. These are large and regenerated.
+data/
+checkpoints/
+runs/
+*.pt
+*.pth
+
+# Secrets. Only templates such as secret.example.yaml are committed.
+.env
+.env.*
+k8s/secret.yaml
+*.pem
+*.key
+kubeconfig*
+
+# Course brief stays local; it is not part of the public repo.
+assignment.pdf
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/

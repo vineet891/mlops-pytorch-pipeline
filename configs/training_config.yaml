@@ -1,0 +1,22 @@
+# Default training configuration for local runs.
+# Kubernetes replaces this file with a ConfigMap mounted at
+# /app/configs/training_config.yaml (same keys, cluster paths).
+model:
+  architecture: resnet18
+  num_classes: 10
+training:
+  epochs: 10
+  batch_size: 64
+  learning_rate: 0.001
+  early_stopping_patience: 3
+  seed: 42
+data:
+  dataset: cifar10
+  data_dir: data
+  num_workers: 2
+  # Use 1.0 for a full run. A smaller fraction keeps laptop tests short.
+  subset_fraction: 1.0
+  download: true
+output:
+  checkpoint_dir: checkpoints
+  model_name: classifier_v1.pt
