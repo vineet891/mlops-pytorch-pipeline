@@ -1,8 +1,7 @@
 # mlops-pytorch-pipeline
 
 PyTorch image classifier taken through local development, Docker, and
-Kubernetes. Course: MLOps and Infrastructure for Machine Learning.
-Roll number: DA25G524.
+Kubernetes.
 
 The model is a ResNet-18 trained on CIFAR-10. Training runs as a
 Kubernetes Job that writes a checkpoint to a PersistentVolumeClaim. A
